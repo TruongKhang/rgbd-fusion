@@ -31,6 +31,7 @@ class Trainer(BaseTrainer):
         name_metrics = list()
         for m in self.metric_ftns:
             name_metrics.append(m.__name__)
+            name_metrics.append("gt_%s" % m.__name__)
         self.train_metrics = MetricTracker('loss', *name_metrics, writer=self.writer)
         self.valid_metrics = MetricTracker('loss', *name_metrics, writer=self.writer)
 
@@ -52,13 +53,14 @@ class Trainer(BaseTrainer):
             intrinsics, extrinsics = proj_matrices[:, :, 1, :, :], proj_matrices[:, :, 0, :, :]
             camera_params = torch.matmul(intrinsics[..., :3, :3], extrinsics[..., :3, :4])
             warped_depths, warped_confs, _ = MYTH.DepthColorAngleReprojectionNeighbours.apply(depths, confs, camera_params, 1.0)
+            warped_depths /= 100.0
             ref_depth, src_depths = warped_depths[:, 0, ...], warped_depths[:, 1:, ...]
             ref_conf, src_confs = warped_confs[:, 0, ...], warped_confs[:, 1:, ...]
 
             self.optimizer.zero_grad()
             pred_depth, pred_conf = self.model(src_depths, src_confs)
 
-            gt_depth = sample_cuda["depth"]["stage3"].unsqueeze(1)
+            gt_depth = sample_cuda["depth"]["stage3"].unsqueeze(1) / 100.0
             mask = sample_cuda["depth"]["stage3"].unsqueeze(1)
             target = (gt_depth, mask > 0.5)
             loss = self.criterion(pred_depth, pred_conf, target)
@@ -69,14 +71,15 @@ class Trainer(BaseTrainer):
             # self.writer.set_step((epoch - 1) * self.len_epoch + batch_idx)
             self.train_metrics.update('loss', loss.item(), n=target[0].size(0))
             for met in self.metric_ftns:
-                self.train_metrics.update(met.__name__, met(pred_depth, target).item(), n=target[0].size(0))
+                self.train_metrics.update(met.__name__, met(pred_depth, target, scale_factor=100.0).item(), n=target[0].size(0))
+                self.train_metrics.update("gt_%s" % met.__name__, met(ref_depth, target, scale_factor=100.0).item(), n=target[0].size(0))
 
             if batch_idx % self.log_step == 0:
                 self.logger.debug('Train Epoch: {}, #processed_frames: {} Loss: {:.6f}, RMSE: {:.6f}'.format(
                     epoch,
                     self._progress(batch_idx),
                     self.train_metrics.avg('loss'),
-                    self.train_metrics.avg('rmse')))
+                    self.train_metrics.avg('mae')))
 
         log = self.train_metrics.result()
 
@@ -117,12 +120,13 @@ class Trainer(BaseTrainer):
                 camera_params = torch.matmul(intrinsics[..., :3, :3], extrinsics[..., :3, :4])
                 warped_depths, warped_confs, _ = MYTH.DepthColorAngleReprojectionNeighbours.apply(depths, confs,
                                                                                                   camera_params, 1.0)
+                warped_depths /= 100.0
                 ref_depth, src_depths = warped_depths[:, 0, ...], warped_depths[:, 1:, ...]
                 ref_conf, src_confs = warped_confs[:, 0, ...], warped_confs[:, 1:, ...]
 
                 pred_depth, pred_conf = self.model(src_depths, src_confs)
 
-                gt_depth = sample_cuda["depth"]["stage3"].unsqueeze(1)
+                gt_depth = sample_cuda["depth"]["stage3"].unsqueeze(1) / 100.0
                 mask = sample_cuda["depth"]["stage3"].unsqueeze(1)
                 target = (gt_depth, mask > 0.5)
                 loss = self.criterion(pred_depth, pred_conf, target)
@@ -130,7 +134,10 @@ class Trainer(BaseTrainer):
                 # self.writer.set_step((epoch - 1) * self.len_epoch + batch_idx)
                 self.valid_metrics.update('loss', loss.item(), n=target[0].size(0))
                 for met in self.metric_ftns:
-                    self.valid_metrics.update(met.__name__, met(pred_depth, target).item(), n=target[0].size(0))
+                    self.valid_metrics.update(met.__name__, met(pred_depth, target, scale_factor=100.0).item(),
+                                              n=target[0].size(0))
+                    self.valid_metrics.update("gt_%s" % met.__name__,
+                                              met(pred_depth, target, scale_factor=100.0).item(), n=target[0].size(0))
 
                 if save_folder is not None:
                     util.save_image(path_depth, '%d.png' % batch_idx, pred_depth.squeeze(0).squeeze(0).cpu().numpy())
