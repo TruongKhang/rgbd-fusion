@@ -32,7 +32,7 @@ def main(config):
         "num_depths": config["data_loader"]["args"]["num_srcs"],
         "interval_scale": config["data_loader"]["args"]["interval_scale"],
         "shuffle": False,
-        "seq_size": config["data_loader"]["args"]["size_seq"],
+        "seq_size": config["data_loader"]["args"]["seq_size"],
         "batch_size": 1,
         "depth_scale": config["data_loader"]["args"]["depth_scale"]
     }

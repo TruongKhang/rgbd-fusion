@@ -14,7 +14,6 @@ class Trainer(BaseTrainer):
                  valid_data_loader=None, lr_scheduler=None, len_epoch=None):
         super().__init__(model, criterion, metric_ftns, optimizer, config)
         self.config = config
-        self.skipping_frames = config['trainer']['skipping_frames']
         self.data_loader = data_loader
         self.data_loader.set_device(self.device)
         if len_epoch is None:
@@ -49,7 +48,7 @@ class Trainer(BaseTrainer):
             sample_cuda = util.tocuda(sample)
 
             depths, confs = sample_cuda["input_depths"], sample_cuda["input_confs"]
-            proj_matrices = sample_cuda["project_matrices"]["stage3"]
+            proj_matrices = sample_cuda["proj_matrices"]["stage3"]
             intrinsics, extrinsics = proj_matrices[:, :, 1, :, :], proj_matrices[:, :, 0, :, :]
             camera_params = torch.matmul(intrinsics[..., :3, :3], extrinsics[..., :3, :4])
             warped_depths, warped_confs, _ = MYTH.DepthColorAngleReprojectionNeighbours.apply(depths, confs, camera_params, 1.0)
@@ -113,7 +112,7 @@ class Trainer(BaseTrainer):
                 sample_cuda = util.tocuda(sample)
 
                 depths, confs = sample_cuda["input_depths"], sample_cuda["input_confs"]
-                proj_matrices = sample_cuda["project_matrices"]["stage3"]
+                proj_matrices = sample_cuda["proj_matrices"]["stage3"]
                 intrinsics, extrinsics = proj_matrices[:, :, 1, :, :], proj_matrices[:, :, 0, :, :]
                 camera_params = torch.matmul(intrinsics[..., :3, :3], extrinsics[..., :3, :4])
                 warped_depths, warped_confs, _ = MYTH.DepthColorAngleReprojectionNeighbours.apply(depths, confs,
