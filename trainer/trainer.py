@@ -75,7 +75,7 @@ class Trainer(BaseTrainer):
                 self.train_metrics.update("gt_%s" % met.__name__, met(ref_depth, target, scale_factor=100.0).item(), n=target[0].size(0))
 
             if batch_idx % self.log_step == 0:
-                self.logger.debug('Train Epoch: {}, #processed_frames: {} Loss: {:.6f}, RMSE: {:.6f}'.format(
+                self.logger.debug('Train Epoch: {}, #processed_frames: {} Loss: {:.6f}, MAE: {:.6f}'.format(
                     epoch,
                     self._progress(batch_idx),
                     self.train_metrics.avg('loss'),
