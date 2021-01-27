@@ -137,7 +137,7 @@ class Trainer(BaseTrainer):
                     self.valid_metrics.update(met.__name__, met(pred_depth, target, scale_factor=100.0).item(),
                                               n=target[0].size(0))
                     self.valid_metrics.update("gt_%s" % met.__name__,
-                                              met(pred_depth, target, scale_factor=100.0).item(), n=target[0].size(0))
+                                              met(ref_depth, target, scale_factor=100.0).item(), n=target[0].size(0))
 
                 if save_folder is not None:
                     util.save_image(path_depth, '%d.png' % batch_idx, pred_depth.squeeze(0).squeeze(0).cpu().numpy())

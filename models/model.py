@@ -71,8 +71,9 @@ class DepthRefinementNet(BaseModel):
 
         self.bn = bn
         # self.feature_root = feature_root
+        self.conf_estimator = UNetSP(2, 1)
 
-        self.stage1 = NormCNN(pos_fn='softplus')
+        self.nconv = NormCNN(pos_fn='softplus')
 
         self.depth_refinement = UNet(1, 32, 1, 3, batchnorms=self.bn)
         self.conf_refinement = UNetSP(1, 1)
@@ -83,9 +84,15 @@ class DepthRefinementNet(BaseModel):
 
         num_views = depths.size(1)
 
+        mean_depth = torch.mean(depths, dim=1)
+
         prop_depths, prop_confs = [], []
         for i in range(num_views):
-            dout, cout = self.stage1(depths[:, i, ...], confs[:, i, ...])
+            diff_depth = torch.abs(depths[:, i, ...] - mean_depth)
+            est_conf = self.conf_estimator(torch.cat((confs[:, i, ...], diff_depth), dim=1))
+            dout, cout = self.nconv(depths[:, i, ...], est_conf)
+
+            # dout, cout = self.nconv(depths[:, i, ...], confs[:, i, ...])
             prop_depths.append(dout)
             prop_confs.append(cout)
         prop_depths = torch.stack(prop_depths, dim=1)
