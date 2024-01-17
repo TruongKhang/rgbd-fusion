@@ -7,7 +7,7 @@ Given a set of RGB-D images capturing a scene, our goal is to reconstruct the 3D
 - Next, they convert the highly confident image pixels to 3D points using depth information and camera matrices. 
 - Finally, these methods perform a geometric consistency checking step to filter noisy 3D points. More specifically, we assume that each image has a set of $N$ neighboring images (given in a `pair.txt` file). An 3D point is kept if its reprojection errors are smaller than an $\epsilon$ value in $N_c/N$ neighbors.
 
-If you want to understand more about the process above, [this paper](https://openaccess.thecvf.com/content_ECCV_2018/papers/Yao_Yao_MVSNet_Depth_Inference_ECCV_2018_paper.pdf) is a good start. 
+If you want to understand more about the process above, Secion 4.2 in [this paper](https://openaccess.thecvf.com/content_ECCV_2018/papers/Yao_Yao_MVSNet_Depth_Inference_ECCV_2018_paper.pdf) is a good start. 
 
 The given code implements these steps. You can try to run and see the results.
 
@@ -48,7 +48,11 @@ You'll try to produce a neural surface reconstruction of the provided RGB-D data
 - GO-Surf: Neural Feature Grid Optimization for
 Fast, High-Fidelity RGB-D Surface Reconstruction ([paper](https://arxiv.org/pdf/2206.14735v2.pdf), [code](https://github.com/JingwenWang95/go-surf))
 
-I want to see how neural reconstruction
+You can clone these code and import necessary functions to your code.
+
+I want to see how neural reconstruction approach can deal with large scenes. 
+
+You can ask me if you have any problems when running the code.
 
 
 
